@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iron Shield</title>
+<style>
+body{margin:0;background:#53634a;color:white;font-family:Arial;text-align:center;overflow:hidden}
+canvas{display:block;width:100vw;height:100vh}
+#ui{position:fixed;top:10px;left:10px;text-align:left;font-weight:bold;text-shadow:2px 2px #000}
+button{padding:12px;margin:4px;border:0;border-radius:10px;font-weight:bold}
+#buttons{position:fixed;bottom:10px;left:0;right:0}
+</style>
+</head>
+<body>
+
+<div id="ui">
+IRON SHIELD<br>
+Turn: <span id="turn">1</span> |
+Supplies: <span id="sup">100</span> |
+Objectives: <span id="obj">0</span>/3
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="buttons">
+<button onclick="select()">SELECT</button>
+<button onclick="move()">MOVE</button>
+<button onclick="capture()">CAPTURE</button>
+<button onclick="endTurn()">END TURN</button>
+</div>
+
+<script>
+const c=document.getElementById("game");
+const x=c.getContext("2d");
+
+let W,H,turn=1,sup=100,selected=0;
+
+let units=[
+{x:.18,y:.75,name:"INF",sel:true},
+{x:.35,y:.65,name:"INF",sel:false},
+{x:.22,y:.52,name:"REC",sel:false}
+];
+
+let objectives=[
+{x:.25,y:.25,held:false},
+{x:.52,y:.20,held:false},
+{x:.76,y:.38,held:false}
+];
+
+let enemies=[
+{x:.80,y:.20},
+{x:.55,y:.35},
+{x:.82,y:.52}
+];
+
+function resize(){
+ W=c.width=innerWidth*devicePixelRatio;
+ H=c.height=innerHeight*devicePixelRatio;
+}
+addEventListener("resize",resize);
+resize();
+
+function draw(){
+ x.fillStyle="#59694b";
+ x.fillRect(0,0,W,H);
+
+ // roads
+ x.strokeStyle="#81765b";
+ x.lineWidth=30;
+ x.beginPath();
+ x.moveTo(0,H*.60);
+ x.lineTo(W*.40,H*.48);
+ x.lineTo(W,H*.55);
+ x.stroke();
+
+ // fields
+ for(let i=0;i<30;i++){
+  x.fillStyle=i%2?"#647650":"#4d6243";
+  x.fillRect((i*137)%W,(i*83)%H,90,40);
+ }
+
+ // objectives
+ objectives.forEach((o,i)=>{
+  x.fillStyle=o.held?"#ddd":"#d6a52a";
+  x.beginPath();
+  x.arc(o.x*W,o.y*H,26,0,Math.PI*2);
+  x.fill();
+  x.fillStyle="#111";
+  x.fillText("OBJ "+(i+1),o.x*W-18,o.y*H+5);
+ });
+
+ // enemies
+ enemies.forEach(e=>{
+  x.fillStyle="#9b3838";
+  x.beginPath();
+  x.arc(e.x*W,e.y*H,21,0,Math.PI*2);
+  x.fill();
+  x.fillStyle="white";
+  x.fillText("OPP",e.x*W-13,e.y*H+4);
+ });
+
+ // units
+ units.forEach(u=>{
+  x.fillStyle=u.sel?"#42b5ff":"#174b70";
+  x.fillRect(u.x*W-22,u.y*H-22,44,44);
+  x.fillStyle="white";
+  x.fillText(u.name,u.x*W-15,u.y*H+5);
+ });
+
+ document.getElementById("turn").textContent=turn;
+ document.getElementById("sup").textContent=sup;
+ document.getElementById("obj").textContent=
+ objectives.filter(o=>o.held).length;
+}
+
+function select(){
+ units[selected].sel=false;
+ selected=(selected+1)%units.length;
+ units[selected].sel=true;
+ draw();
+}
+
+function move(){
+ if(sup<5)return;
+ let u=units[selected];
+ u.x=Math.min(.9,u.x+.08);
+ u.y=Math.max(.1,u.y-.06);
+ sup-=5;
+ draw();
+}
+
+function capture(){
+ let u=units[selected];
+
+ objectives.forEach(o=>{
+  if(Math.hypot(u.x-o.x,u.y-o.y)<.13)
+   o.held=true;
+ });
+
+ draw();
+
+ if(objectives.every(o=>o.held))
+  alert("MISSION COMPLETE!");
+}
+
+function endTurn(){
+ turn++;
+ sup=Math.max(0,sup-3);
+
+ enemies.forEach(e=>{
+  e.x+=(Math.random()-.5)*.08;
+  e.y+=(Math.random()-.5)*.08;
+ });
+
+ draw();
+}
+
+draw();
+</script>
+
+</body>
+</html>
